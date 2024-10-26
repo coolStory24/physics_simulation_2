@@ -1,4 +1,4 @@
-package org.example.visualisation;
+package org.example.twodimensions.visualisation;
 
 import java.awt.Color;
 

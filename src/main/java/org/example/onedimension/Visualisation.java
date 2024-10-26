@@ -1,4 +1,4 @@
-package org.example;
+package org.example.onedimension;
 
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartPanel;
@@ -20,9 +20,9 @@ public class Visualisation extends JFrame {
 
     // Create chart
     JFreeChart chart = ChartFactory.createXYLineChart(
-        "Отклонение в зависимости от времени",       // Chart title
-        "X",              // X-Axis Label
-        "t",              // Y-Axis Label
+        "",       // Chart title
+        "step",              // X-Axis Label
+        "delta x",              // Y-Axis Label
         dataset,          // Dataset
         PlotOrientation.VERTICAL,
         true, true, false);

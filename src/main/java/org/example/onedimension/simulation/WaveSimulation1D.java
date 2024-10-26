@@ -1,7 +1,7 @@
-package org.example.simulation;
+package org.example.onedimension.simulation;
 
 import java.util.Arrays;
-import org.example.Visualisation;
+import org.example.onedimension.Visualisation;
 
 public class WaveSimulation1D {
 
@@ -78,7 +78,7 @@ public class WaveSimulation1D {
       }
     }
 
-    var visualisation = new Visualisation("GOOOG", result);
+    var visualisation = new Visualisation("", result);
     visualisation.visualise();
   }
 

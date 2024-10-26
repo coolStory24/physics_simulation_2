@@ -1,12 +1,12 @@
-package org.example.visualisation;
+package org.example.twodimensions.visualisation;
 
 import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.KeyEvent;
 import java.util.concurrent.atomic.AtomicInteger;
 import javax.swing.*;
+
 public class HeatMapVisualisation  extends JPanel implements ActionListener {
   private final int FRAMES_PER_SECOND = 20;
 
