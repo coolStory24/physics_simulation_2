@@ -6,12 +6,12 @@ import java.io.IOException;
 
 public class Simulation {
 
-  static final int PARTICLES_X = 100; // Amount of particles along X axis
-  static final int PARTICLES_Y = 100; // Amount of particles along Y axis
+  static final int PARTICLES_X = 500; // Amount of particles along X axis
+  static final int PARTICLES_Y = 500; // Amount of particles along Y axis
   static final double SPRING_LENGTH = 0.001;
   static final double WEIGHT = 0.01;
   static final double K = 0.001; // Spring constant
-  static final double TIME_STEP = 1.0E-2; // Time between simulation steps [s]
+  static final double TIME_STEP = 1.0E-1; // Time between simulation steps [s]
   static final double DURATION = 2.0E3; // Duration of the simulation [s]
   static final long SIMULATION_STEPS = (long) (DURATION / TIME_STEP); // Calculated number of steps
   static final int SNAPSHOTS = 1_000; // Number of snapshots
@@ -23,6 +23,7 @@ public class Simulation {
     try {
       writer = new BufferedWriter(new FileWriter(FILE_PATH));
       writer.write(TIME_STEP + "\n");
+      writer.write(PARTICLES_X + "\n");
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
