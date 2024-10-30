@@ -3,11 +3,12 @@ package org.example.twodimensions.visualisation;
 import java.awt.Color;
 
 public class HeatMapColor {
+
   private static final Color[] COLORS = {
       Color.WHITE,         // 0
       Color.BLUE,          // 1/5
       Color.GREEN,         // 2/5
-      Color.YELLOW,        // 3/5
+      Color.ORANGE,        // 3/5
       Color.RED,           // 4/5
       new Color(139, 0, 0)
   };
@@ -38,4 +39,3 @@ public class HeatMapColor {
     return new Color(r, g, b);
   }
 }
-
