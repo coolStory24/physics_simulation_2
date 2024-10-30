@@ -1,17 +1,37 @@
 package org.example.twodimensions.simulation;
 
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.io.IOException;
+
 public class Simulation {
 
-  static final int PARTICLES_X = 100; // Amount of particles along X axis
-  static final int PARTICLES_Y = 100; // Amount of particles along Y axis
-  static final double K = 0.0001; // Spring constant
+  static final int PARTICLES_X = 500; // Amount of particles along X axis
+  static final int PARTICLES_Y = 500; // Amount of particles along Y axis
+  static final double SPRING_LENGTH = 0.001;
+  static final double WEIGHT = 0.01;
+  static final double K = 0.001; // Spring constant
   static final double TIME_STEP = 1.0E-1; // Time between simulation steps [s]
   static final double DURATION = 2.0E3; // Duration of the simulation [s]
   static final long SIMULATION_STEPS = (long) (DURATION / TIME_STEP); // Calculated number of steps
   static final int SNAPSHOTS = 1_000; // Number of snapshots
   static final Particle[][] PARTICLES = new Particle[PARTICLES_X][PARTICLES_Y];
+  static final String FILE_PATH = "src/main/resources/file.txt";
+  static final BufferedWriter writer;
+
+  static {
+    try {
+      writer = new BufferedWriter(new FileWriter(FILE_PATH));
+      writer.write(TIME_STEP + "\n");
+      writer.write(PARTICLES_X + "\n");
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+  }
 
   static final double[][][] snapshotArray = new double[SNAPSHOTS][PARTICLES_X][PARTICLES_Y];
+
+  static boolean PRINT_PERCENTAGE = true;
 
   private static class Particle {
     final double startX, startY;
@@ -52,7 +72,7 @@ public class Simulation {
       for (int j = 0; j < PARTICLES_Y; j++) {
         boolean isFixed = (i == 0 && j == 0) || (i == PARTICLES_X - 1 && j == 0) ||
             (i == 0 && j == PARTICLES_Y - 1) || (i == PARTICLES_X - 1 && j == PARTICLES_Y - 1);
-        PARTICLES[i][j] = new Particle(i, j, 1);
+        PARTICLES[i][j] = new Particle(i * SPRING_LENGTH, j * SPRING_LENGTH, WEIGHT);
 
         if (isFixed) {
           PARTICLES[i][j].vx = PARTICLES[i][j].vy = 0;
@@ -60,8 +80,8 @@ public class Simulation {
       }
     }
 
-    PARTICLES[0][0].vx -= 1;
-    PARTICLES[0][0].vy -= 1;
+    PARTICLES[PARTICLES_X / 2][PARTICLES_Y / 2].vx -= 1;
+    PARTICLES[PARTICLES_X / 2][PARTICLES_Y / 2].vy -= 1;
   }
 
   private static void simulateStep(long step) {
@@ -83,7 +103,9 @@ public class Simulation {
     }
 
     if (step % (SIMULATION_STEPS / SNAPSHOTS) == 0) {
-      printPercent(step);
+      if (PRINT_PERCENTAGE) {
+        printPercent(step);
+      }
       int snapshotNumber = (int) (step / (SIMULATION_STEPS / SNAPSHOTS));
 
       setHeatMap(snapshotNumber);
@@ -113,7 +135,7 @@ public class Simulation {
     double dx = p2.x - p1.x;
     double dy = p2.y - p1.y;
     double distance = Math.sqrt(dx * dx + dy * dy);
-    double force = K * (distance - 1.0);
+    double force = K * (distance - SPRING_LENGTH);
 
     double fx = force * dx / distance;
     double fy = force * dy / distance;
@@ -125,6 +147,11 @@ public class Simulation {
     for (int i = 0; i < PARTICLES_X; i++) {
       for (int j = 0; j < PARTICLES_Y; j++) {
         snapshotArray[snapshotNumber][i][j] = Simulation.PARTICLES[i][j].getDelta();
+        try {
+          writer.write(snapshotNumber + " " + i + " " + j + Simulation.PARTICLES[i][j].getDelta() + '\n');
+        } catch (IOException e) {
+          throw new RuntimeException(e);
+        }
       }
     }
   }
