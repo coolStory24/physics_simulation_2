@@ -6,12 +6,12 @@ import java.io.IOException;
 
 public class Simulation {
 
-  static final int PARTICLES_X = 500; // Amount of particles along X axis
-  static final int PARTICLES_Y = 500; // Amount of particles along Y axis
+  static final int PARTICLES_X = 150; // Amount of particles along X axis
+  static final int PARTICLES_Y = 150; // Amount of particles along Y axis
   static final double SPRING_LENGTH = 0.001;
   static final double WEIGHT = 0.01;
   static final double K = 0.001; // Spring constant
-  static final double TIME_STEP = 1.0E-1; // Time between simulation steps [s]
+  static final double TIME_STEP = 1.0E-1 / 2; // Time between simulation steps [s]
   static final double DURATION = 2.0E3; // Duration of the simulation [s]
   static final long SIMULATION_STEPS = (long) (DURATION / TIME_STEP); // Calculated number of steps
   static final int SNAPSHOTS = 1_000; // Number of snapshots
@@ -22,8 +22,9 @@ public class Simulation {
   static {
     try {
       writer = new BufferedWriter(new FileWriter(FILE_PATH));
-      writer.write(TIME_STEP + "\n");
+      writer.write(DURATION / SNAPSHOTS + "\n");
       writer.write(PARTICLES_X + "\n");
+      writer.write(SNAPSHOTS + "\n");
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
@@ -39,6 +40,7 @@ public class Simulation {
     double vx = 0, vy = 0;
     double ax = 0, ay = 0;
     final double mass;
+    boolean isLocked = false;
 
     public Particle(double x, double y, double mass) {
       this.x = x;
@@ -53,10 +55,12 @@ public class Simulation {
     }
 
     public void update(double dt) {
-      vx += ax * dt;
-      vy += ay * dt;
-      x += vx * dt;
-      y += vy * dt;
+      if (!isLocked) {
+        vx += ax * dt;
+        vy += ay * dt;
+        x += vx * dt;
+        y += vy * dt;
+      }
       ax = 0;
       ay = 0;
     }
@@ -70,8 +74,7 @@ public class Simulation {
   private static void init() {
     for (int i = 0; i < PARTICLES_X; i++) {
       for (int j = 0; j < PARTICLES_Y; j++) {
-        boolean isFixed = (i == 0 && j == 0) || (i == PARTICLES_X - 1 && j == 0) ||
-            (i == 0 && j == PARTICLES_Y - 1) || (i == PARTICLES_X - 1 && j == PARTICLES_Y - 1);
+        boolean isFixed = isFixed(i, j);
         PARTICLES[i][j] = new Particle(i * SPRING_LENGTH, j * SPRING_LENGTH, WEIGHT);
 
         if (isFixed) {
@@ -82,15 +85,50 @@ public class Simulation {
 
     PARTICLES[PARTICLES_X / 2][PARTICLES_Y / 2].vx -= 1;
     PARTICLES[PARTICLES_X / 2][PARTICLES_Y / 2].vy -= 1;
+//    dirtyParticlesConfig();
+//    interferenceConfig();
+//    lockedBorderConfig();
+//    oneWayWaveConfig();
+  }
+
+  private static void dirtyParticlesConfig() {
+    int separation = PARTICLES_X / 8;
+    for (int i = 0; i < PARTICLES_X; i++) {
+      for (int j = 0; j < PARTICLES_Y; j++) {
+        if (separation * 6 < i && i < separation * 7 && separation * 6 < j && j < separation * 7) {
+          PARTICLES[i][j].isLocked = true;
+        }
+      }
+    }
+    PARTICLES[1][1].vx -= 1;
+    PARTICLES[1][1].vy -= 1;
+  }
+
+  private static void lockedBorderConfig() {
+    for (int i = 0; i < PARTICLES_X; i++) {
+      PARTICLES[i][0].isLocked = true;
+      PARTICLES[0][i].isLocked = true;
+      PARTICLES[i][PARTICLES_Y - 1].isLocked = true;
+      PARTICLES[PARTICLES_X - 1][i].isLocked = true;
+    }
+  }
+
+  private static void oneWayWaveConfig()  {
+    PARTICLES[PARTICLES_X / 2][PARTICLES_Y / 2].vx += 0.01;
+  }
+
+  private static void interferenceConfig() {
+    int separationX = PARTICLES_X / 12;
+    int separationY = PARTICLES_Y / 2;
+    PARTICLES[separationX][separationY - 3].vx += 1;
+    PARTICLES[separationX][separationY - 3].vy += 1;
+    PARTICLES[separationX][separationY + 3].vx += 1;
+    PARTICLES[separationX][separationY + 3].vy += 1;
   }
 
   private static void simulateStep(long step) {
     for (int i = 0; i < PARTICLES_X; i++) {
       for (int j = 0; j < PARTICLES_Y; j++) {
-        if ((i == 0 && j == 0) || (i == 0 && j == PARTICLES_Y - 1) ||
-            (i == PARTICLES_X - 1 && j == 0) || (i == PARTICLES_X - 1 && j == PARTICLES_Y - 1)) {
-          continue;
-        }
 
         applyNeighborForces(i, j);
       }
@@ -148,12 +186,17 @@ public class Simulation {
       for (int j = 0; j < PARTICLES_Y; j++) {
         snapshotArray[snapshotNumber][i][j] = Simulation.PARTICLES[i][j].getDelta();
         try {
-          writer.write(snapshotNumber + " " + i + " " + j + Simulation.PARTICLES[i][j].getDelta() + '\n');
+          writer.write(snapshotNumber + " " + i + " " + j + " " + Simulation.PARTICLES[i][j].getDelta() + '\n');
         } catch (IOException e) {
           throw new RuntimeException(e);
         }
       }
     }
+  }
+
+  private static boolean isFixed(int i, int j) {
+    return (i == 0 && j == 0) || (i == PARTICLES_X - 1 && j == 0) ||
+        (i == 0 && j == PARTICLES_Y - 1) || (i == PARTICLES_X - 1 && j == PARTICLES_Y - 1);
   }
 
   private static void printHeatMap(double[][] heatMap) {
