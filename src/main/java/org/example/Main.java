@@ -8,7 +8,8 @@ public class Main {
 
   public static void main(String[] args) throws FileNotFoundException {
     var snapshots = Simulation.simulate();
-    new VisualisationFrame(snapshots);
+    Simulation.writeAudioAndPlay();
+//    new VisualisationFrame(snapshots);
 //    new VisualisationFrame("src/main/resources/file.txt");
   }
 }

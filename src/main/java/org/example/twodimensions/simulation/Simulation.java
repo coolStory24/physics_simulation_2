@@ -3,21 +3,30 @@ package org.example.twodimensions.simulation;
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
+import org.example.sound.AudioData;
+import org.example.sound.AudioFile;
+import org.example.sound.SoundRecorder;
 
 public class Simulation {
 
-  static final int PARTICLES_X = 150; // Amount of particles along X axis
-  static final int PARTICLES_Y = 150; // Amount of particles along Y axis
+  static final int PARTICLES_X = 250; // Amount of particles along X axis
+  static final int PARTICLES_Y = 50; // Amount of particles along Y axis
   static final double SPRING_LENGTH = 0.001;
   static final double WEIGHT = 0.01;
-  static final double K = 0.001; // Spring constant
-  static final double TIME_STEP = 1.0E-1 / 2; // Time between simulation steps [s]
-  static final double DURATION = 2.0E3; // Duration of the simulation [s]
+  static final double K = 100000; // Spring constant
+  static final double TIME_STEP = 1.0/8000; // Time between simulation steps [s]
+  static final double DURATION = 20; // Duration of the simulation [s]
   static final long SIMULATION_STEPS = (long) (DURATION / TIME_STEP); // Calculated number of steps
-  static final int SNAPSHOTS = 1_000; // Number of snapshots
+  static final int SNAPSHOTS = 600; // Number of snapshots
   static final Particle[][] PARTICLES = new Particle[PARTICLES_X][PARTICLES_Y];
   static final String FILE_PATH = "src/main/resources/file.txt";
   static final BufferedWriter writer;
+  static final boolean PULSE = true;
+  static final double beatsPerSecond = 82.41;
+  static long lastUpdateIndex = 0;
+  static AudioFile audioFile = new AudioFile("src/main/resources/Iv4n T3a - Bleeding Grasshopper.wav");
+  static AudioData audioData = audioFile.extractAudioData();
+  static SoundRecorder soundRecorder = new SoundRecorder("src/main/resources/outputAudio.wav");
 
   static {
     try {
@@ -83,11 +92,11 @@ public class Simulation {
       }
     }
 
-    PARTICLES[PARTICLES_X / 2][PARTICLES_Y / 2].vx -= 1;
-    PARTICLES[PARTICLES_X / 2][PARTICLES_Y / 2].vy -= 1;
+//    PARTICLES[PARTICLES_X / 2][PARTICLES_Y / 2].vx -= 1;
+//    PARTICLES[PARTICLES_X / 2][PARTICLES_Y / 2].vy -= 1;
 //    dirtyParticlesConfig();
 //    interferenceConfig();
-//    lockedBorderConfig();
+    lockedBorderConfig();
 //    oneWayWaveConfig();
   }
 
@@ -107,8 +116,10 @@ public class Simulation {
   private static void lockedBorderConfig() {
     for (int i = 0; i < PARTICLES_X; i++) {
       PARTICLES[i][0].isLocked = true;
-      PARTICLES[0][i].isLocked = true;
       PARTICLES[i][PARTICLES_Y - 1].isLocked = true;
+    }
+    for (int i = 0; i < PARTICLES_Y; i++) {
+      PARTICLES[0][i].isLocked = true;
       PARTICLES[PARTICLES_X - 1][i].isLocked = true;
     }
   }
@@ -124,6 +135,39 @@ public class Simulation {
     PARTICLES[separationX][separationY - 3].vy += 1;
     PARTICLES[separationX][separationY + 3].vx += 1;
     PARTICLES[separationX][separationY + 3].vy += 1;
+  }
+
+  private static void pulse(long stepIndex) {
+    PARTICLES[1][1].isLocked = true;
+    double AMPLITUDE = 0.001;
+    int xIndex = PARTICLES_X / 2;
+    int yIndex = PARTICLES_Y / 2;
+    double timePassed = (stepIndex - lastUpdateIndex) * TIME_STEP;
+    if (PULSE && timePassed > 1.0 / beatsPerSecond) {
+//      System.out.println("Pulse");
+      lastUpdateIndex = stepIndex;
+//      PARTICLES[PARTICLES_X / 2][PARTICLES_Y / 2].vx -= 0.2;
+//      PARTICLES[PARTICLES_X / 2][PARTICLES_Y / 2].vy -= 0.2;
+      for (int i = -10; i <= 10; i++) {
+        PARTICLES[xIndex][yIndex + i].x = SPRING_LENGTH * xIndex + 4 * SPRING_LENGTH * AMPLITUDE;
+      }
+//      PARTICLES[xIndex][yIndex].y = SPRING_LENGTH * yIndex + 2 * SPRING_LENGTH / 5;
+    }
+    else {
+      for (int i = -10; i <= 10; i++) {
+        PARTICLES[xIndex][yIndex + i].x = SPRING_LENGTH * xIndex;
+      }
+//      PARTICLES[xIndex][yIndex].y = SPRING_LENGTH * yIndex;
+    }
+  }
+
+  static void recordSound(int x, int y) {
+    soundRecorder.recordValue(PARTICLES[x][y].x);
+  }
+
+  public static void writeAudioAndPlay() {
+    soundRecorder.writeData(audioData.sampleRate(), audioData.byteDepth());
+    soundRecorder.playData();
   }
 
   private static void simulateStep(long step) {
@@ -146,8 +190,11 @@ public class Simulation {
       }
       int snapshotNumber = (int) (step / (SIMULATION_STEPS / SNAPSHOTS));
 
-      setHeatMap(snapshotNumber);
+//      setHeatMap(snapshotNumber);
     }
+
+    pulse(step);
+    recordSound(PARTICLES_X / 2 + 10, PARTICLES_Y / 2 );
   }
 
   public static double[][][] simulate() {
