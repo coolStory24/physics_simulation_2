@@ -14,7 +14,11 @@ public class HeatMapColor {
   };
 
   public static Color getHeatMapColor(double value, double min, double max) {
-    double scaledValue = scaleValue(value, min, max);
+    if (value < 0) {
+      return Color.GRAY;
+    }
+
+    double scaledValue = scaleValue(value, 0, max);
 
     int colorIndex = (int) (scaledValue * (COLORS.length - 1));
     double fraction = scaledValue * (COLORS.length - 1) - colorIndex;

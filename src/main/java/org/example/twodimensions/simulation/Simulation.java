@@ -6,13 +6,13 @@ import java.io.IOException;
 
 public class Simulation {
 
-  static final int PARTICLES_X = 500; // Amount of particles along X axis
-  static final int PARTICLES_Y = 500; // Amount of particles along Y axis
+  static final int PARTICLES_X = 250; // Amount of particles along X axis
+  static final int PARTICLES_Y = 250; // Amount of particles along Y axis
   static final double SPRING_LENGTH = 0.001;
   static final double WEIGHT = 0.01;
   static final double K = 0.001; // Spring constant
   static final double TIME_STEP = 1.0E-1; // Time between simulation steps [s]
-  static final double DURATION = 2.0E3; // Duration of the simulation [s]
+  static final double DURATION = 5.0E2; // Duration of the simulation [s]
   static final long SIMULATION_STEPS = (long) (DURATION / TIME_STEP); // Calculated number of steps
   static final int SNAPSHOTS = 1_000; // Number of snapshots
   static final Particle[][] PARTICLES = new Particle[PARTICLES_X][PARTICLES_Y];
@@ -34,11 +34,13 @@ public class Simulation {
   static boolean PRINT_PERCENTAGE = true;
 
   private static class Particle {
+
     final double startX, startY;
     double x, y;
     double vx = 0, vy = 0;
     double ax = 0, ay = 0;
     final double mass;
+    final boolean isFixed;
 
     public Particle(double x, double y, double mass) {
       this.x = x;
@@ -46,10 +48,24 @@ public class Simulation {
       this.startX = x;
       this.startY = y;
       this.mass = mass;
+      isFixed = false;
+    }
+
+    private Particle(double x, double y, double mass, boolean isFixed) {
+      this.x = x;
+      this.y = y;
+      this.startX = x;
+      this.startY = y;
+      this.mass = mass;
+      this.isFixed = isFixed;
+    }
+
+    public static Particle createFixed(double x, double y, double mass) {
+      return new Particle(x, y, mass, true);
     }
 
     public double getDelta() {
-      return Math.sqrt(Math.pow(startX - x, 2) + Math.pow(startY - y, 2));
+      return isFixed ? -1 : Math.sqrt(Math.pow(startX - x, 2) + Math.pow(startY - y, 2));
     }
 
     public void update(double dt) {
@@ -70,15 +86,21 @@ public class Simulation {
   private static void init() {
     for (int i = 0; i < PARTICLES_X; i++) {
       for (int j = 0; j < PARTICLES_Y; j++) {
-        boolean isFixed = (i == 0 && j == 0) || (i == PARTICLES_X - 1 && j == 0) ||
-            (i == 0 && j == PARTICLES_Y - 1) || (i == PARTICLES_X - 1 && j == PARTICLES_Y - 1);
-        PARTICLES[i][j] = new Particle(i * SPRING_LENGTH, j * SPRING_LENGTH, WEIGHT);
-
-        if (isFixed) {
-          PARTICLES[i][j].vx = PARTICLES[i][j].vy = 0;
+        if ((i == 0 || j == 0) || (i == PARTICLES_X - 1 || j == PARTICLES_Y - 1)) {
+          PARTICLES[i][j] = Particle.createFixed(i * SPRING_LENGTH, j * SPRING_LENGTH, WEIGHT);
+        } else {
+          PARTICLES[i][j] = new Particle(i * SPRING_LENGTH, j * SPRING_LENGTH,
+              WEIGHT * (i % 10 == 5 && j % 10 == 5 ? 10 : 1));
         }
       }
     }
+
+//    for (int i = 0; i < PARTICLES_X; i++) {
+//      if (i * 20 != PARTICLES_X * 9 && i * 20 != PARTICLES_X * 11) {
+//        PARTICLES[i][PARTICLES_Y / 4] = Particle.createFixed(i * SPRING_LENGTH,
+//            PARTICLES_Y * SPRING_LENGTH / 4, WEIGHT);
+//      }
+//    }
 
     PARTICLES[PARTICLES_X / 2][PARTICLES_Y / 2].vx -= 1;
     PARTICLES[PARTICLES_X / 2][PARTICLES_Y / 2].vy -= 1;
@@ -87,11 +109,6 @@ public class Simulation {
   private static void simulateStep(long step) {
     for (int i = 0; i < PARTICLES_X; i++) {
       for (int j = 0; j < PARTICLES_Y; j++) {
-        if ((i == 0 && j == 0) || (i == 0 && j == PARTICLES_Y - 1) ||
-            (i == PARTICLES_X - 1 && j == 0) || (i == PARTICLES_X - 1 && j == PARTICLES_Y - 1)) {
-          continue;
-        }
-
         applyNeighborForces(i, j);
       }
     }
@@ -125,13 +142,24 @@ public class Simulation {
   private static void applyNeighborForces(int i, int j) {
     Particle p = Simulation.PARTICLES[i][j];
 
-    if (i > 0) applySpringForce(p, Simulation.PARTICLES[i - 1][j]);
-    if (i < PARTICLES_X - 1) applySpringForce(p, Simulation.PARTICLES[i + 1][j]);
-    if (j > 0) applySpringForce(p, Simulation.PARTICLES[i][j - 1]);
-    if (j < PARTICLES_Y - 1) applySpringForce(p, Simulation.PARTICLES[i][j + 1]);
+    if (i > 0) {
+      applySpringForce(p, Simulation.PARTICLES[i - 1][j]);
+    }
+    if (i < PARTICLES_X - 1) {
+      applySpringForce(p, Simulation.PARTICLES[i + 1][j]);
+    }
+    if (j > 0) {
+      applySpringForce(p, Simulation.PARTICLES[i][j - 1]);
+    }
+    if (j < PARTICLES_Y - 1) {
+      applySpringForce(p, Simulation.PARTICLES[i][j + 1]);
+    }
   }
 
   private static void applySpringForce(Particle p1, Particle p2) {
+    if (p1.isFixed) {
+      return;
+    }
     double dx = p2.x - p1.x;
     double dy = p2.y - p1.y;
     double distance = Math.sqrt(dx * dx + dy * dy);
@@ -148,7 +176,8 @@ public class Simulation {
       for (int j = 0; j < PARTICLES_Y; j++) {
         snapshotArray[snapshotNumber][i][j] = Simulation.PARTICLES[i][j].getDelta();
         try {
-          writer.write(snapshotNumber + " " + i + " " + j + Simulation.PARTICLES[i][j].getDelta() + '\n');
+          writer.write(
+              snapshotNumber + " " + i + " " + j + Simulation.PARTICLES[i][j].getDelta() + '\n');
         } catch (IOException e) {
           throw new RuntimeException(e);
         }
@@ -164,7 +193,7 @@ public class Simulation {
     }
   }
 
-  private static void printPercent(long step){
+  private static void printPercent(long step) {
     String formatted = String.format("%.2f %%", (100.0 * step / SIMULATION_STEPS));
     System.out.println(formatted);
   }
