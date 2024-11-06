@@ -10,19 +10,21 @@ import org.example.sound.SoundRecorder;
 public class Simulation {
 
   static final int PARTICLES_X = 250; // Amount of particles along X axis
-  static final int PARTICLES_Y = 50; // Amount of particles along Y axis
+  static final int PARTICLES_Y = 2; // Amount of particles along Y axis
   static final double SPRING_LENGTH = 0.001;
   static final double WEIGHT = 0.01;
-  static final double K = 100000; // Spring constant
+  static final double K = 1000000; // Spring constant
   static final double TIME_STEP = 1.0/8000; // Time between simulation steps [s]
   static final double DURATION = 20; // Duration of the simulation [s]
   static final long SIMULATION_STEPS = (long) (DURATION / TIME_STEP); // Calculated number of steps
   static final int SNAPSHOTS = 600; // Number of snapshots
+  static final int RECORDER_DIST = 30;
   static final Particle[][] PARTICLES = new Particle[PARTICLES_X][PARTICLES_Y];
   static final String FILE_PATH = "src/main/resources/file.txt";
   static final BufferedWriter writer;
-  static final boolean PULSE = true;
+  static final boolean PULSE = false;
   static final double beatsPerSecond = 82.41;
+  static final double AMPLITUDE = 0.001;
   static long lastUpdateIndex = 0;
   static AudioFile audioFile = new AudioFile("src/main/resources/Iv4n T3a - Bleeding Grasshopper.wav");
   static AudioData audioData = audioFile.extractAudioData();
@@ -96,7 +98,7 @@ public class Simulation {
 //    PARTICLES[PARTICLES_X / 2][PARTICLES_Y / 2].vy -= 1;
 //    dirtyParticlesConfig();
 //    interferenceConfig();
-    lockedBorderConfig();
+//    lockedBorderConfig();
 //    oneWayWaveConfig();
   }
 
@@ -139,26 +141,33 @@ public class Simulation {
 
   private static void pulse(long stepIndex) {
     PARTICLES[1][1].isLocked = true;
-    double AMPLITUDE = 0.001;
+
     int xIndex = PARTICLES_X / 2;
     int yIndex = PARTICLES_Y / 2;
     double timePassed = (stepIndex - lastUpdateIndex) * TIME_STEP;
-    if (PULSE && timePassed > 1.0 / beatsPerSecond) {
+
+    double offset = AMPLITUDE * audioData.data()[(int)stepIndex];
+    for (int i = 0; i < PARTICLES_Y; i++) {
+      PARTICLES[xIndex][i].x = SPRING_LENGTH * xIndex + SPRING_LENGTH * offset;
+      PARTICLES[xIndex][i].y = SPRING_LENGTH * i + 3 * SPRING_LENGTH * offset;
+    }
+
+//    if (PULSE && timePassed > 1.0 / beatsPerSecond) {
 //      System.out.println("Pulse");
-      lastUpdateIndex = stepIndex;
+//      lastUpdateIndex = stepIndex;
 //      PARTICLES[PARTICLES_X / 2][PARTICLES_Y / 2].vx -= 0.2;
 //      PARTICLES[PARTICLES_X / 2][PARTICLES_Y / 2].vy -= 0.2;
-      for (int i = -10; i <= 10; i++) {
-        PARTICLES[xIndex][yIndex + i].x = SPRING_LENGTH * xIndex + 4 * SPRING_LENGTH * AMPLITUDE;
-      }
+//      for (int i = -10; i <= 10; i++) {
+//        PARTICLES[xIndex][yIndex + i].x = SPRING_LENGTH * xIndex + 4 * SPRING_LENGTH * AMPLITUDE;
+//      }
 //      PARTICLES[xIndex][yIndex].y = SPRING_LENGTH * yIndex + 2 * SPRING_LENGTH / 5;
-    }
-    else {
-      for (int i = -10; i <= 10; i++) {
-        PARTICLES[xIndex][yIndex + i].x = SPRING_LENGTH * xIndex;
-      }
+//    }
+//    else {
+//      for (int i = -10; i <= 10; i++) {
+//        PARTICLES[xIndex][yIndex + i].x = SPRING_LENGTH * xIndex;
+//      }
 //      PARTICLES[xIndex][yIndex].y = SPRING_LENGTH * yIndex;
-    }
+//    }
   }
 
   static void recordSound(int x, int y) {
@@ -194,7 +203,7 @@ public class Simulation {
     }
 
     pulse(step);
-    recordSound(PARTICLES_X / 2 + 10, PARTICLES_Y / 2 );
+    recordSound(PARTICLES_X / 2 + RECORDER_DIST, PARTICLES_Y / 2 );
   }
 
   public static double[][][] simulate() {
