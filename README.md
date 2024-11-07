@@ -1,1 +1,1 @@
-# physics_simulation_2
+# Wave spread simulation
