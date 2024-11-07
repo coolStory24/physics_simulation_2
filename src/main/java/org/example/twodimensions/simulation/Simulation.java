@@ -91,7 +91,7 @@ public class Simulation {
               WEIGHT);
         } else {
           PARTICLES[i][j] = new Particle(i * SPRING_LENGTH, j * SPRING_LENGTH,
-              WEIGHT * (j > 90 ? 5 : 1));
+              WEIGHT * (j > 90 ? 1 : 3));
         }
       }
     }
