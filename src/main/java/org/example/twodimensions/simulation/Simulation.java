@@ -7,6 +7,22 @@ import java.util.Arrays;
 import java.util.stream.IntStream;
 
 public class Simulation {
+  private static class Ellipse {
+    private static final int FOCUS1_X = 150;
+    private static final int FOCUS1_Y = 150;
+    private static final int FOCUS2_X = 349;
+    private static final int FOCUS2_Y = 349;
+
+    private static final double sumOfDistances = 1.7 * Math.sqrt(Math.pow(FOCUS2_X - FOCUS1_X, 2) + Math.pow(FOCUS2_Y - FOCUS1_Y, 2));
+
+    public static boolean isInsideEllipse(int x, int y) {
+      double distanceToFocus1 = Math.sqrt(Math.pow(x - FOCUS1_X, 2) + Math.pow(y - FOCUS1_Y, 2));
+      double distanceToFocus2 = Math.sqrt(Math.pow(x - FOCUS2_X, 2) + Math.pow(y - FOCUS2_Y, 2));
+
+      return (distanceToFocus1 + distanceToFocus2) <= sumOfDistances;
+    }
+  }
+
 
   static final int PARTICLES_X = 500; // Amount of particles along X axis
   static final int PARTICLES_Y = 500; // Amount of particles along Y axis
@@ -14,9 +30,9 @@ public class Simulation {
   static final double WEIGHT = 0.01;
   static final double K = 0.001; // Spring constant
   static final double TIME_STEP = 1.0E-1; // Time between simulation steps [s]
-  static final double DURATION = 1.0E2; // Duration of the simulation [s]
+  static final double DURATION = 2.0E3; // Duration of the simulation [s]
   static final long SIMULATION_STEPS = (long) (DURATION / TIME_STEP); // Calculated number of steps
-  static final int SNAPSHOTS = 1_00; // Number of snapshots
+  static final int SNAPSHOTS = 1_000; // Number of snapshots
   static final Particle[][] PARTICLES = new Particle[PARTICLES_X][PARTICLES_Y];
   static final String FILE_PATH = "src/main/resources/file.txt";
   static final BufferedWriter writer;
@@ -88,7 +104,7 @@ public class Simulation {
   private static void init() {
     for (int i = 0; i < PARTICLES_X; i++) {
       for (int j = 0; j < PARTICLES_Y; j++) {
-        if ((i == 0 || j == 0) || (i == PARTICLES_X - 1 || j == PARTICLES_Y - 1)) {
+        if ((i == 0 || j == 0) || (i == PARTICLES_X - 1 || j == PARTICLES_Y - 1) || !Ellipse.isInsideEllipse(i, j)) {
           PARTICLES[i][j] = Particle.createFixed(i * SPRING_LENGTH, j * SPRING_LENGTH, WEIGHT);
         } else {
           PARTICLES[i][j] = new Particle(i * SPRING_LENGTH, j * SPRING_LENGTH,
@@ -97,18 +113,9 @@ public class Simulation {
       }
     }
 
-    int[] holes = new int[] {220, 221, 222, 279, 278, 277};
 
-    for (int i = 0; i < PARTICLES_X; i++) {
-      int finalI = i;
-      if (IntStream.of(holes).noneMatch(x -> x == finalI)) {
-        PARTICLES[i][PARTICLES_Y / 4] = Particle.createFixed(i * SPRING_LENGTH,
-            PARTICLES_Y * SPRING_LENGTH / 4, WEIGHT);
-      }
-    }
-
-    PARTICLES[PARTICLES_X / 2][PARTICLES_Y / 2].vx -= 1;
-    PARTICLES[PARTICLES_X / 2][PARTICLES_Y / 2].vy -= 1;
+    PARTICLES[150][150].vx -= 1;
+    PARTICLES[150][150].vy -= 1;
   }
 
   private static void simulateStep(long step) {
