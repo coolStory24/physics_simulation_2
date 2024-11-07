@@ -12,7 +12,7 @@ public class Simulation {
   static final double WEIGHT = 0.01;
   static final double K = 0.001; // Spring constant
   static final double TIME_STEP = 1.0E-1; // Time between simulation steps [s]
-  static final double DURATION = 5.0E2; // Duration of the simulation [s]
+  static final double DURATION = 1.0E3; // Duration of the simulation [s]
   static final long SIMULATION_STEPS = (long) (DURATION / TIME_STEP); // Calculated number of steps
   static final int SNAPSHOTS = 1_000; // Number of snapshots
   static final Particle[][] PARTICLES = new Particle[PARTICLES_X][PARTICLES_Y];
@@ -87,19 +87,23 @@ public class Simulation {
     for (int i = 0; i < PARTICLES_X; i++) {
       for (int j = 0; j < PARTICLES_Y; j++) {
         if ((i == 0 || j == 0) || (i == PARTICLES_X - 1 || j == PARTICLES_Y - 1)) {
-          PARTICLES[i][j] = Particle.createFixed(i * SPRING_LENGTH, j * SPRING_LENGTH, WEIGHT);
+          PARTICLES[i][j] = Particle.createFixed(i * SPRING_LENGTH, j * SPRING_LENGTH,
+              WEIGHT);
         } else {
           PARTICLES[i][j] = new Particle(i * SPRING_LENGTH, j * SPRING_LENGTH,
-              WEIGHT * (i % 10 == 5 && j % 10 == 5 ? 10 : 1));
+              WEIGHT * (j > 90 ? 5 : 1));
         }
       }
     }
 
 //    for (int i = 0; i < PARTICLES_X; i++) {
-//      if (i * 20 != PARTICLES_X * 9 && i * 20 != PARTICLES_X * 11) {
-//        PARTICLES[i][PARTICLES_Y / 4] = Particle.createFixed(i * SPRING_LENGTH,
-//            PARTICLES_Y * SPRING_LENGTH / 4, WEIGHT);
+//      if (i == 110 || i == 111 || i == 138 || i == 139) {
+//        continue;
 //      }
+//
+//      PARTICLES[i][PARTICLES_Y / 3] = Particle.createFixed(i * SPRING_LENGTH,
+//          PARTICLES_Y * SPRING_LENGTH / 3, WEIGHT);
+//
 //    }
 
     PARTICLES[PARTICLES_X / 2][PARTICLES_Y / 2].vx -= 1;
