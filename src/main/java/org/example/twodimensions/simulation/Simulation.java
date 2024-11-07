@@ -3,18 +3,20 @@ package org.example.twodimensions.simulation;
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.stream.IntStream;
 
 public class Simulation {
 
-  static final int PARTICLES_X = 250; // Amount of particles along X axis
-  static final int PARTICLES_Y = 250; // Amount of particles along Y axis
+  static final int PARTICLES_X = 500; // Amount of particles along X axis
+  static final int PARTICLES_Y = 500; // Amount of particles along Y axis
   static final double SPRING_LENGTH = 0.001;
   static final double WEIGHT = 0.01;
   static final double K = 0.001; // Spring constant
   static final double TIME_STEP = 1.0E-1; // Time between simulation steps [s]
-  static final double DURATION = 5.0E2; // Duration of the simulation [s]
+  static final double DURATION = 1.0E2; // Duration of the simulation [s]
   static final long SIMULATION_STEPS = (long) (DURATION / TIME_STEP); // Calculated number of steps
-  static final int SNAPSHOTS = 1_000; // Number of snapshots
+  static final int SNAPSHOTS = 1_00; // Number of snapshots
   static final Particle[][] PARTICLES = new Particle[PARTICLES_X][PARTICLES_Y];
   static final String FILE_PATH = "src/main/resources/file.txt";
   static final BufferedWriter writer;
@@ -90,17 +92,20 @@ public class Simulation {
           PARTICLES[i][j] = Particle.createFixed(i * SPRING_LENGTH, j * SPRING_LENGTH, WEIGHT);
         } else {
           PARTICLES[i][j] = new Particle(i * SPRING_LENGTH, j * SPRING_LENGTH,
-              WEIGHT * (i % 10 == 5 && j % 10 == 5 ? 10 : 1));
+              WEIGHT);
         }
       }
     }
 
-//    for (int i = 0; i < PARTICLES_X; i++) {
-//      if (i * 20 != PARTICLES_X * 9 && i * 20 != PARTICLES_X * 11) {
-//        PARTICLES[i][PARTICLES_Y / 4] = Particle.createFixed(i * SPRING_LENGTH,
-//            PARTICLES_Y * SPRING_LENGTH / 4, WEIGHT);
-//      }
-//    }
+    int[] holes = new int[] {220, 221, 222, 279, 278, 277};
+
+    for (int i = 0; i < PARTICLES_X; i++) {
+      int finalI = i;
+      if (IntStream.of(holes).noneMatch(x -> x == finalI)) {
+        PARTICLES[i][PARTICLES_Y / 4] = Particle.createFixed(i * SPRING_LENGTH,
+            PARTICLES_Y * SPRING_LENGTH / 4, WEIGHT);
+      }
+    }
 
     PARTICLES[PARTICLES_X / 2][PARTICLES_Y / 2].vx -= 1;
     PARTICLES[PARTICLES_X / 2][PARTICLES_Y / 2].vy -= 1;
